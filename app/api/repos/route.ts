@@ -1,0 +1,145 @@
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '@/lib/db';
+import User from '@/lib/models/User';
+import Repository from '@/lib/models/Repository';
+import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getTokensFromCookies } from '@/lib/auth/cookies';
+
+async function getAuthenticatedUser() {
+    const { accessToken } = await getTokensFromCookies();
+    if (!accessToken) return null;
+
+    try {
+        const payload = verifyAccessToken(accessToken);
+        await dbConnect();
+        return await User.findById(payload.userId);
+    } catch {
+        return null;
+    }
+}
+
+export async function GET() {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
+        await dbConnect();
+        const repos = await Repository.find({ userId: user._id })
+            .sort({ connectedAt: -1 })
+            .lean();
+
+        return NextResponse.json({ repos });
+    } catch (err) {
+        console.error('Error fetching connected repos:', err);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
+        const body = await request.json();
+        const {
+            githubRepoId,
+            name,
+            fullName,
+            owner,
+            description,
+            language,
+            defaultBranch,
+            isPrivate,
+            url,
+        } = body;
+
+        if (!githubRepoId || !fullName || !name || !owner || !url) {
+            return NextResponse.json(
+                { error: 'Missing required fields' },
+                { status: 400 }
+            );
+        }
+
+        await dbConnect();
+
+        const repo = await Repository.findOneAndUpdate(
+            { userId: user._id, githubRepoId },
+            {
+                $set: {
+                    name,
+                    fullName,
+                    owner,
+                    description: description || '',
+                    language: language || '',
+                    defaultBranch: defaultBranch || 'main',
+                    isPrivate: isPrivate || false,
+                    url,
+                },
+                $setOnInsert: {
+                    userId: user._id,
+                    githubRepoId,
+                    connectedAt: new Date(),
+                },
+            },
+            { upsert: true, new: true }
+        );
+
+        return NextResponse.json({ repo }, { status: 201 });
+    } catch (err) {
+        console.error('Error connecting repo:', err);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Not authenticated' },
+                { status: 401 }
+            );
+        }
+
+        const { searchParams } = new URL(request.url);
+        const githubRepoId = searchParams.get('githubRepoId');
+
+        if (!githubRepoId) {
+            return NextResponse.json(
+                { error: 'Missing githubRepoId' },
+                { status: 400 }
+            );
+        }
+
+        await dbConnect();
+
+        await Repository.findOneAndDelete({
+            userId: user._id,
+            githubRepoId: Number(githubRepoId),
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error('Error disconnecting repo:', err);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}

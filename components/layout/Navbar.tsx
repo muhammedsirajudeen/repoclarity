@@ -1,12 +1,23 @@
 "use client"
 
 import Link from "next/link"
-import { Database, Github } from "lucide-react"
+import Image from "next/image"
+import { Database, LogOut, LayoutDashboard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/ui/mode-toggle"
+import { useAuth } from "@/components/auth/AuthProvider"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Navbar() {
+    const { user, isAuthenticated, loading } = useAuth()
+
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-14 items-center mx-auto px-4">
@@ -27,15 +38,83 @@ export function Navbar() {
                     </div>
                     <nav className="flex items-center space-x-2">
                         <ModeToggle />
-                        <Link href="/login">
-                            <Button variant="ghost">Log in</Button>
-                        </Link>
-                        <Link href="/login">
-                            <Button>Get Started</Button>
-                        </Link>
+                        {!loading && isAuthenticated && user ? (
+                            <UserMenu
+                                name={user.name || user.username}
+                                avatarUrl={user.avatarUrl}
+                            />
+                        ) : !loading ? (
+                            <>
+                                <Link href="/login">
+                                    <Button variant="ghost">Log in</Button>
+                                </Link>
+                                <Link href="/login">
+                                    <Button>Get Started</Button>
+                                </Link>
+                            </>
+                        ) : null}
                     </nav>
                 </div>
             </div>
         </header>
+    )
+}
+
+function UserMenu({
+    name,
+    avatarUrl,
+}: {
+    name: string
+    avatarUrl: string
+}) {
+    const { logout } = useAuth()
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                >
+                    <Image
+                        src={avatarUrl}
+                        alt={name}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                    />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center gap-2 p-2">
+                    <Image
+                        src={avatarUrl}
+                        alt={name}
+                        width={24}
+                        height={24}
+                        className="rounded-full"
+                    />
+                    <p className="text-sm font-medium">{name}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link
+                        href="/dashboard"
+                        className="flex items-center cursor-pointer"
+                    >
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive"
+                >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }

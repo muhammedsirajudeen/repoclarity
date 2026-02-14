@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/card"
 import { Github } from "lucide-react"
 
+function handleGitHubLogin() {
+    window.location.href = "/api/auth/github"
+}
+
 export function LoginForm() {
     return (
         <Card className="w-[350px]">
@@ -21,7 +25,11 @@ export function LoginForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-                <Button variant="outline" className="w-full">
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGitHubLogin}
+                >
                     <Github className="mr-2 h-4 w-4" />
                     Login with GitHub
                 </Button>

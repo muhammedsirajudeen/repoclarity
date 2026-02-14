@@ -1,17 +1,33 @@
-import { Metadata } from "next"
+"use client"
+
 import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { ChevronLeft, Loader2 } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button"
 import { LoginForm } from "@/components/auth/LoginForm"
+import { useAuth } from "@/components/auth/AuthProvider"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = {
-    title: "Login",
-    description: "Login to your account",
-}
-
 export default function LoginPage() {
+    const { isAuthenticated, loading } = useAuth()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (!loading && isAuthenticated) {
+            router.replace("/dashboard")
+        }
+    }, [loading, isAuthenticated, router])
+
+    if (loading || isAuthenticated) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
+
     return (
         <div className="container flex h-screen w-screen flex-col items-center justify-center mx-auto">
             <Link
