@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
             defaultBranch,
             isPrivate,
             url,
+            dbType,
+            backendLanguage,
+            orm,
         } = body;
 
         if (!githubRepoId || !fullName || !name || !owner || !url) {
@@ -87,6 +90,9 @@ export async function POST(request: NextRequest) {
                     defaultBranch: defaultBranch || 'main',
                     isPrivate: isPrivate || false,
                     url,
+                    dbType: dbType || '',
+                    backendLanguage: backendLanguage || '',
+                    orm: orm || '',
                 },
                 $setOnInsert: {
                     userId: user._id,

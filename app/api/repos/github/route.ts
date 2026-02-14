@@ -55,7 +55,7 @@ export async function GET() {
 
         while (true) {
             const response = await fetch(
-                `https://api.github.com/user/repos?per_page=${perPage}&page=${page}&sort=updated&direction=desc`,
+                `https://api.github.com/user/repos?per_page=${perPage}&page=${page}&sort=updated&direction=desc&visibility=all&affiliation=owner,collaborator,organization_member`,
                 {
                     headers: {
                         Authorization: `Bearer ${user.githubAccessToken}`,

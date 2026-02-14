@@ -9,6 +9,9 @@ import {
     Loader2,
     ExternalLink,
     Trash2,
+    Database,
+    Code,
+    Layers,
 } from "lucide-react"
 
 import apiClient from "@/lib/api/client"
@@ -27,6 +30,9 @@ interface ConnectedRepo {
     defaultBranch: string
     isPrivate: boolean
     url: string
+    dbType: string
+    backendLanguage: string
+    orm: string
     connectedAt: string
 }
 
@@ -163,7 +169,7 @@ export default function ReposPage() {
                                 </p>
                             )}
 
-                            <div className="mt-3 flex items-center gap-2">
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
                                 {repo.language && (
                                     <Badge variant="secondary" className="text-xs">
                                         {repo.language}
@@ -173,6 +179,29 @@ export default function ReposPage() {
                                     {repo.defaultBranch}
                                 </Badge>
                             </div>
+
+                            {(repo.dbType || repo.backendLanguage || repo.orm) && (
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t pt-2">
+                                    {repo.dbType && (
+                                        <Badge variant="outline" className="text-xs gap-1">
+                                            <Database className="h-3 w-3" />
+                                            {repo.dbType.toUpperCase()}
+                                        </Badge>
+                                    )}
+                                    {repo.backendLanguage && (
+                                        <Badge variant="outline" className="text-xs gap-1">
+                                            <Code className="h-3 w-3" />
+                                            {repo.backendLanguage}
+                                        </Badge>
+                                    )}
+                                    {repo.orm && (
+                                        <Badge variant="outline" className="text-xs gap-1">
+                                            <Layers className="h-3 w-3" />
+                                            {repo.orm}
+                                        </Badge>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

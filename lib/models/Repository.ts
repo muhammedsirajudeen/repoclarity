@@ -11,6 +11,9 @@ export interface IRepository extends Document {
     defaultBranch: string;
     isPrivate: boolean;
     url: string;
+    dbType: string;
+    backendLanguage: string;
+    orm: string;
     connectedAt: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -59,6 +62,18 @@ const RepositorySchema = new Schema<IRepository>(
         url: {
             type: String,
             required: true,
+        },
+        dbType: {
+            type: String,
+            default: '',
+        },
+        backendLanguage: {
+            type: String,
+            default: '',
+        },
+        orm: {
+            type: String,
+            default: '',
         },
         connectedAt: {
             type: Date,
