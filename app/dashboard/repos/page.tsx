@@ -12,6 +12,8 @@ import {
     Database,
     Code,
     Layers,
+    Sparkles,
+    Eye,
 } from "lucide-react"
 
 import apiClient from "@/lib/api/client"
@@ -33,6 +35,7 @@ interface ConnectedRepo {
     dbType: string
     backendLanguage: string
     orm: string
+    hasDiagram: boolean
     connectedAt: string
 }
 
@@ -202,6 +205,26 @@ export default function ReposPage() {
                                     )}
                                 </div>
                             )}
+
+                            <div className="mt-3 border-t pt-3">
+                                <Link href={
+                                    repo.hasDiagram
+                                        ? `/dashboard/diagrams?repoId=${repo._id}`
+                                        : `/dashboard/diagrams/generate?repoId=${repo._id}`
+                                } className="w-full">
+                                    <Button
+                                        variant={repo.hasDiagram ? "outline" : "default"}
+                                        size="sm"
+                                        className="w-full gap-1.5"
+                                    >
+                                        {repo.hasDiagram ? (
+                                            <><Eye className="h-3.5 w-3.5" /> View Diagram</>
+                                        ) : (
+                                            <><Sparkles className="h-3.5 w-3.5" /> Generate Diagram</>
+                                        )}
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
                     ))}
                 </div>

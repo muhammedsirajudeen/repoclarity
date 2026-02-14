@@ -14,6 +14,7 @@ export interface IRepository extends Document {
     dbType: string;
     backendLanguage: string;
     orm: string;
+    hasDiagram: boolean;
     connectedAt: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -74,6 +75,10 @@ const RepositorySchema = new Schema<IRepository>(
         orm: {
             type: String,
             default: '',
+        },
+        hasDiagram: {
+            type: Boolean,
+            default: false,
         },
         connectedAt: {
             type: Date,
