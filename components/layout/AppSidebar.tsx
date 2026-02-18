@@ -7,7 +7,6 @@ import {
     Database,
     LayoutDashboard,
     GitBranch,
-    Settings,
     LogOut,
     ChevronsLeftRight,
 } from "lucide-react"
@@ -45,11 +44,7 @@ const mainNavItems = [
         href: "/dashboard/diagrams",
         icon: Database,
     },
-    {
-        title: "Settings",
-        href: "/dashboard/settings",
-        icon: Settings,
-    },
+
 ]
 
 export function AppSidebar() {
