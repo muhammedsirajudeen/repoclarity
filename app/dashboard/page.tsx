@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { Button } from "@/components/ui/button"
@@ -44,12 +44,17 @@ interface ConnectedRepo {
 export default function DashboardPage() {
     const { user, loading } = useAuth()
     const [repos, setRepos] = useState<ConnectedRepo[]>([])
+    const [diagrams, setDiagrams] = useState<{ _id: string; models: { name: string }[] }[]>([])
     const [statsLoading, setStatsLoading] = useState(true)
 
     const fetchStats = useCallback(async () => {
         try {
-            const res = await apiClient.get("/repos")
-            setRepos(res.data.repos)
+            const [reposRes, diagramsRes] = await Promise.all([
+                apiClient.get("/repos"),
+                apiClient.get("/diagrams"),
+            ])
+            setRepos(reposRes.data.repos)
+            setDiagrams(diagramsRes.data.diagrams || [])
         } catch {
             // Not critical — silently fail
         } finally {
@@ -62,6 +67,10 @@ export default function DashboardPage() {
             fetchStats()
         }
     }, [loading, user, fetchStats])
+
+    const totalModels = useMemo(() => {
+        return diagrams.reduce((sum, d) => sum + (d.models?.length || 0), 0)
+    }, [diagrams])
 
     if (loading) {
         return (
@@ -90,12 +99,15 @@ export default function DashboardPage() {
 
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-3">
-                <StatCard
-                    icon={<Database className="h-5 w-5" />}
-                    label="Diagrams"
-                    value={0}
-                    loading={false}
-                />
+                <Link href="/dashboard/diagrams" className="block">
+                    <StatCard
+                        icon={<Database className="h-5 w-5" />}
+                        label="Diagrams"
+                        value={diagrams.length}
+                        loading={statsLoading}
+                        interactive
+                    />
+                </Link>
                 <Link href="/dashboard/repos" className="block">
                     <StatCard
                         icon={<GitBranch className="h-5 w-5" />}
@@ -108,8 +120,8 @@ export default function DashboardPage() {
                 <StatCard
                     icon={<FileCode className="h-5 w-5" />}
                     label="Models Detected"
-                    value={0}
-                    loading={false}
+                    value={totalModels}
+                    loading={statsLoading}
                 />
             </div>
 
@@ -214,20 +226,21 @@ export default function DashboardPage() {
                             </div>
                         </button>
                     } />
-                    <button
-                        disabled
-                        className="flex items-center gap-3 rounded-lg border border-dashed p-4 text-left opacity-50"
-                    >
-                        <div className="rounded-md bg-primary/10 p-2">
-                            <Database className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium">Generate Diagram</p>
-                            <p className="text-xs text-muted-foreground">
-                                Create a DB diagram
-                            </p>
-                        </div>
-                    </button>
+                    <Link href="/dashboard/diagrams">
+                        <button
+                            className="flex items-center gap-3 rounded-lg border border-dashed p-4 text-left transition-colors hover:bg-accent/50 hover:border-primary/50 w-full"
+                        >
+                            <div className="rounded-md bg-primary/10 p-2">
+                                <Database className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium">View Diagrams</p>
+                                <p className="text-xs text-muted-foreground">
+                                    View DB diagrams
+                                </p>
+                            </div>
+                        </button>
+                    </Link>
                     <button
                         disabled
                         className="flex items-center gap-3 rounded-lg border border-dashed p-4 text-left opacity-50"
