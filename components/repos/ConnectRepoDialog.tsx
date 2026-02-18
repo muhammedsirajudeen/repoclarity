@@ -43,96 +43,96 @@ interface GitHubRepo {
 }
 
 const DB_TYPES = [
-    { id: "sql", label: "SQL", description: "PostgreSQL, MySQL, SQLite, etc." },
-    { id: "nosql", label: "NoSQL", description: "MongoDB, DynamoDB, etc." },
+    { id: "sql", label: "SQL", description: "PostgreSQL, MySQL, SQLite, etc.", comingSoon: true },
+    { id: "nosql", label: "NoSQL", description: "MongoDB, DynamoDB, etc.", comingSoon: false },
 ]
 
-const LANGUAGES: Record<string, { id: string; label: string }[]> = {
+const LANGUAGES: Record<string, { id: string; label: string; comingSoon?: boolean }[]> = {
     sql: [
-        { id: "javascript", label: "JavaScript / TypeScript" },
-        { id: "python", label: "Python" },
-        { id: "java", label: "Java" },
-        { id: "go", label: "Go" },
-        { id: "csharp", label: "C#" },
-        { id: "ruby", label: "Ruby" },
-        { id: "php", label: "PHP" },
+        { id: "javascript", label: "JavaScript / TypeScript", comingSoon: true },
+        { id: "python", label: "Python", comingSoon: true },
+        { id: "java", label: "Java", comingSoon: true },
+        { id: "go", label: "Go", comingSoon: true },
+        { id: "csharp", label: "C#", comingSoon: true },
+        { id: "ruby", label: "Ruby", comingSoon: true },
+        { id: "php", label: "PHP", comingSoon: true },
     ],
     nosql: [
         { id: "javascript", label: "JavaScript / TypeScript" },
-        { id: "python", label: "Python" },
-        { id: "java", label: "Java" },
-        { id: "go", label: "Go" },
-        { id: "csharp", label: "C#" },
-        { id: "ruby", label: "Ruby" },
+        { id: "python", label: "Python", comingSoon: true },
+        { id: "java", label: "Java", comingSoon: true },
+        { id: "go", label: "Go", comingSoon: true },
+        { id: "csharp", label: "C#", comingSoon: true },
+        { id: "ruby", label: "Ruby", comingSoon: true },
     ],
 }
 
-const ORM_OPTIONS: Record<string, Record<string, { id: string; label: string }[]>> = {
+const ORM_OPTIONS: Record<string, Record<string, { id: string; label: string; comingSoon?: boolean }[]>> = {
     sql: {
         javascript: [
-            { id: "prisma", label: "Prisma" },
-            { id: "typeorm", label: "TypeORM" },
-            { id: "sequelize", label: "Sequelize" },
-            { id: "drizzle", label: "Drizzle" },
-            { id: "knex", label: "Knex.js" },
+            { id: "prisma", label: "Prisma", comingSoon: true },
+            { id: "typeorm", label: "TypeORM", comingSoon: true },
+            { id: "sequelize", label: "Sequelize", comingSoon: true },
+            { id: "drizzle", label: "Drizzle", comingSoon: true },
+            { id: "knex", label: "Knex.js", comingSoon: true },
         ],
         python: [
-            { id: "sqlalchemy", label: "SQLAlchemy" },
-            { id: "django-orm", label: "Django ORM" },
-            { id: "peewee", label: "Peewee" },
-            { id: "tortoise", label: "Tortoise ORM" },
+            { id: "sqlalchemy", label: "SQLAlchemy", comingSoon: true },
+            { id: "django-orm", label: "Django ORM", comingSoon: true },
+            { id: "peewee", label: "Peewee", comingSoon: true },
+            { id: "tortoise", label: "Tortoise ORM", comingSoon: true },
         ],
         java: [
-            { id: "hibernate", label: "Hibernate" },
-            { id: "jpa", label: "Spring Data JPA" },
-            { id: "mybatis", label: "MyBatis" },
-            { id: "jooq", label: "jOOQ" },
+            { id: "hibernate", label: "Hibernate", comingSoon: true },
+            { id: "jpa", label: "Spring Data JPA", comingSoon: true },
+            { id: "mybatis", label: "MyBatis", comingSoon: true },
+            { id: "jooq", label: "jOOQ", comingSoon: true },
         ],
         go: [
-            { id: "gorm", label: "GORM" },
-            { id: "ent", label: "Ent" },
-            { id: "sqlx", label: "sqlx" },
+            { id: "gorm", label: "GORM", comingSoon: true },
+            { id: "ent", label: "Ent", comingSoon: true },
+            { id: "sqlx", label: "sqlx", comingSoon: true },
         ],
         csharp: [
-            { id: "ef-core", label: "Entity Framework Core" },
-            { id: "dapper", label: "Dapper" },
-            { id: "nhibernate", label: "NHibernate" },
+            { id: "ef-core", label: "Entity Framework Core", comingSoon: true },
+            { id: "dapper", label: "Dapper", comingSoon: true },
+            { id: "nhibernate", label: "NHibernate", comingSoon: true },
         ],
         ruby: [
-            { id: "activerecord", label: "ActiveRecord" },
-            { id: "sequel", label: "Sequel" },
+            { id: "activerecord", label: "ActiveRecord", comingSoon: true },
+            { id: "sequel", label: "Sequel", comingSoon: true },
         ],
         php: [
-            { id: "eloquent", label: "Eloquent (Laravel)" },
-            { id: "doctrine", label: "Doctrine" },
+            { id: "eloquent", label: "Eloquent (Laravel)", comingSoon: true },
+            { id: "doctrine", label: "Doctrine", comingSoon: true },
         ],
     },
     nosql: {
         javascript: [
             { id: "mongoose", label: "Mongoose" },
-            { id: "prisma", label: "Prisma" },
-            { id: "typegoose", label: "Typegoose" },
-            { id: "mongodb-native", label: "MongoDB Native Driver" },
+            { id: "prisma", label: "Prisma", comingSoon: true },
+            { id: "typegoose", label: "Typegoose", comingSoon: true },
+            { id: "mongodb-native", label: "MongoDB Native Driver", comingSoon: true },
         ],
         python: [
-            { id: "pymongo", label: "PyMongo" },
-            { id: "mongoengine", label: "MongoEngine" },
-            { id: "odmantic", label: "ODMantic" },
-            { id: "motor", label: "Motor (async)" },
+            { id: "pymongo", label: "PyMongo", comingSoon: true },
+            { id: "mongoengine", label: "MongoEngine", comingSoon: true },
+            { id: "odmantic", label: "ODMantic", comingSoon: true },
+            { id: "motor", label: "Motor (async)", comingSoon: true },
         ],
         java: [
-            { id: "spring-data-mongo", label: "Spring Data MongoDB" },
-            { id: "morphia", label: "Morphia" },
+            { id: "spring-data-mongo", label: "Spring Data MongoDB", comingSoon: true },
+            { id: "morphia", label: "Morphia", comingSoon: true },
         ],
         go: [
-            { id: "mongo-go-driver", label: "MongoDB Go Driver" },
-            { id: "mgm", label: "mgm" },
+            { id: "mongo-go-driver", label: "MongoDB Go Driver", comingSoon: true },
+            { id: "mgm", label: "mgm", comingSoon: true },
         ],
         csharp: [
-            { id: "mongodb-csharp", label: "MongoDB C# Driver" },
+            { id: "mongodb-csharp", label: "MongoDB C# Driver", comingSoon: true },
         ],
         ruby: [
-            { id: "mongoid", label: "Mongoid" },
+            { id: "mongoid", label: "Mongoid", comingSoon: true },
         ],
     },
 }
@@ -305,8 +305,8 @@ export function ConnectRepoDialog({
                             <div
                                 key={s}
                                 className={`h-1 flex-1 rounded-full transition-colors ${i <= ["select-repo", "db-type", "language", "orm"].indexOf(step)
-                                        ? "bg-primary"
-                                        : "bg-muted"
+                                    ? "bg-primary"
+                                    : "bg-muted"
                                     }`}
                             />
                         )
@@ -330,6 +330,7 @@ export function ConnectRepoDialog({
                             label: t.label,
                             description: t.description,
                             icon: <Database className="h-6 w-6" />,
+                            comingSoon: t.comingSoon,
                         }))}
                         onSelect={handleSelectDbType}
                     />
@@ -341,6 +342,7 @@ export function ConnectRepoDialog({
                             id: l.id,
                             label: l.label,
                             icon: <Code className="h-6 w-6" />,
+                            comingSoon: l.comingSoon,
                         }))}
                         onSelect={handleSelectLanguage}
                     />
@@ -352,6 +354,7 @@ export function ConnectRepoDialog({
                             id: o.id,
                             label: o.label,
                             icon: <Layers className="h-6 w-6" />,
+                            comingSoon: o.comingSoon,
                         }))}
                         onSelect={handleSelectOrm}
                         loading={connecting}
@@ -456,7 +459,7 @@ function OptionGrid({
     onSelect,
     loading = false,
 }: {
-    options: { id: string; label: string; description?: string; icon: React.ReactNode }[]
+    options: { id: string; label: string; description?: string; icon: React.ReactNode; comingSoon?: boolean }[]
     onSelect: (id: string) => void
     loading?: boolean
 }) {
@@ -465,20 +468,32 @@ function OptionGrid({
             {options.map((opt) => (
                 <button
                     key={opt.id}
-                    onClick={() => onSelect(opt.id)}
-                    disabled={loading}
-                    className="flex items-center gap-3 rounded-lg border p-4 text-left transition-all hover:bg-accent/50 hover:border-primary/50 disabled:opacity-50"
+                    onClick={() => !opt.comingSoon && onSelect(opt.id)}
+                    disabled={loading || opt.comingSoon}
+                    className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${opt.comingSoon
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-accent/50 hover:border-primary/50"
+                        } disabled:opacity-50`}
                 >
-                    <div className="shrink-0 text-primary">{opt.icon}</div>
-                    <div className="min-w-0">
-                        <p className="font-medium text-sm">{opt.label}</p>
+                    <div className={`shrink-0 ${opt.comingSoon ? "text-muted-foreground" : "text-primary"}`}>
+                        {opt.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{opt.label}</p>
+                            {opt.comingSoon && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
+                                    Coming Soon
+                                </Badge>
+                            )}
+                        </div>
                         {opt.description && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                                 {opt.description}
                             </p>
                         )}
                     </div>
-                    {loading && (
+                    {loading && !opt.comingSoon && (
                         <Loader2 className="h-4 w-4 animate-spin ml-auto shrink-0" />
                     )}
                 </button>
