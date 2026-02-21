@@ -9,6 +9,7 @@ import {
     GitBranch,
     LogOut,
     ChevronsLeftRight,
+    CreditCard,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth/AuthProvider"
@@ -44,7 +45,11 @@ const mainNavItems = [
         href: "/dashboard/diagrams",
         icon: Database,
     },
-
+    {
+        title: "Pricing",
+        href: "/dashboard/pricing",
+        icon: CreditCard,
+    },
 ]
 
 export function AppSidebar() {
@@ -119,7 +124,11 @@ export function AppSidebar() {
                                     {user?.name || user?.username}
                                 </span>
                                 <span className="truncate text-xs text-muted-foreground">
-                                    {user?.email || `@${user?.username}`}
+                                    {user?.subscriptionPlan === 'pro'
+                                        ? 'Pro Plan'
+                                        : user?.subscriptionPlan === 'business'
+                                            ? 'Business Plan'
+                                            : 'Free Plan'}
                                 </span>
                             </div>
                         </SidebarMenuButton>

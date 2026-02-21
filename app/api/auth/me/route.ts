@@ -35,6 +35,8 @@ export async function GET() {
                 name: user.name,
                 email: user.email,
                 avatarUrl: user.avatarUrl,
+                subscriptionPlan: user.subscriptionPlan || 'free',
+                subscriptionStatus: user.subscriptionStatus || 'none',
                 createdAt: user.createdAt,
             },
         });

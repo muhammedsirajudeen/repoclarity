@@ -1,5 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export type SubscriptionPlan = 'free' | 'pro' | 'business';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'none';
+
 export interface IUser extends Document {
     githubId: string;
     username: string;
@@ -8,6 +11,10 @@ export interface IUser extends Document {
     avatarUrl: string;
     githubAccessToken: string;
     refreshToken: string;
+    subscriptionPlan: SubscriptionPlan;
+    subscriptionId: string;
+    subscriptionStatus: SubscriptionStatus;
+    subscriptionExpiresAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -43,6 +50,24 @@ const UserSchema = new Schema<IUser>(
         refreshToken: {
             type: String,
             default: '',
+        },
+        subscriptionPlan: {
+            type: String,
+            enum: ['free', 'pro', 'business'],
+            default: 'free',
+        },
+        subscriptionId: {
+            type: String,
+            default: '',
+        },
+        subscriptionStatus: {
+            type: String,
+            enum: ['active', 'cancelled', 'expired', 'none'],
+            default: 'none',
+        },
+        subscriptionExpiresAt: {
+            type: Date,
+            default: null,
         },
     },
     {

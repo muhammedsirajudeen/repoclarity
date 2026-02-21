@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Repository from '@/lib/models/Repository';
 import Diagram from '@/lib/models/Diagram';
+import DiagramUsage from '@/lib/models/DiagramUsage';
 import { getAuthenticatedUser } from '@/lib/auth/getUser';
 import { parseMongooseSchemas, isModelFile, hasSchemaContent } from '@/lib/utils/schemaParser';
+import { getPlanLimits } from '@/lib/utils/subscriptionPlans';
 
 interface GitHubTreeItem {
     path: string;
@@ -114,6 +116,31 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // Check daily diagram generation limit
+        const plan = user.subscriptionPlan || 'free';
+        const limits = getPlanLimits(plan);
+        const today = new Date().toISOString().split('T')[0];
+
+        if (limits.diagramsPerDay !== -1) {
+            const usage = await DiagramUsage.findOne({
+                userId: user._id,
+                date: today,
+            });
+
+            if (usage && usage.count >= limits.diagramsPerDay) {
+                return NextResponse.json(
+                    {
+                        error: 'DIAGRAM_LIMIT_REACHED',
+                        message: `Your ${plan} plan allows ${limits.diagramsPerDay} diagram generation(s) per day. Upgrade to generate more.`,
+                        limit: limits.diagramsPerDay,
+                        current: usage.count,
+                        plan,
+                    },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Fetch the repo tree
         const tree = await fetchRepoTree(
             repo.owner,
@@ -195,6 +222,13 @@ export async function POST(request: NextRequest) {
         await Repository.updateOne(
             { _id: repo._id },
             { $set: { hasDiagram: true } }
+        );
+
+        // Increment daily diagram usage
+        await DiagramUsage.findOneAndUpdate(
+            { userId: user._id, date: today },
+            { $inc: { count: 1 } },
+            { upsert: true }
         );
 
         return NextResponse.json({

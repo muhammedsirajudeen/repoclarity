@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import apiClient from "@/lib/api/client"
+import { useAuth } from "@/components/auth/AuthProvider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { UpgradePlanDialog } from "@/components/layout/UpgradePlanDialog"
+import { getPlanLimits } from "@/lib/utils/subscriptionPlans"
 
 interface GitHubRepo {
     githubRepoId: number
@@ -148,11 +151,13 @@ export function ConnectRepoDialog({
     onRepoConnected,
     trigger,
 }: ConnectRepoDialogProps) {
+    const { user } = useAuth()
     const [open, setOpen] = useState(false)
     const [repos, setRepos] = useState<GitHubRepo[]>([])
     const [loading, setLoading] = useState(false)
     const [search, setSearch] = useState("")
     const [connecting, setConnecting] = useState(false)
+    const [showUpgrade, setShowUpgrade] = useState(false)
 
     // Wizard state
     const [step, setStep] = useState<WizardStep>("select-repo")
@@ -190,6 +195,17 @@ export function ConnectRepoDialog({
     }, [open, fetchGitHubRepos])
 
     const handleSelectRepo = (repo: GitHubRepo) => {
+        // Check subscription limit before allowing repo selection
+        const plan = user?.subscriptionPlan || 'free'
+        const limits = getPlanLimits(plan)
+        const connectedCount = repos.filter((r) => r.connected).length
+
+        if (limits.repoLimit !== -1 && connectedCount >= limits.repoLimit) {
+            setOpen(false)
+            setShowUpgrade(true)
+            return
+        }
+
         setSelectedRepo(repo)
         setStep("db-type")
     }
@@ -233,8 +249,14 @@ export function ConnectRepoDialog({
             )
             onRepoConnected()
             setOpen(false)
-        } catch (err) {
-            console.error("Failed to connect repo:", err)
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { error?: string } } }
+            if (axiosErr?.response?.data?.error === 'REPO_LIMIT_REACHED') {
+                setOpen(false)
+                setShowUpgrade(true)
+            } else {
+                console.error("Failed to connect repo:", err)
+            }
         } finally {
             setConnecting(false)
         }
@@ -267,101 +289,109 @@ export function ConnectRepoDialog({
     )
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || (
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Connect Repository
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] overflow-hidden">
-                <DialogHeader>
-                    <div className="flex items-center gap-2">
-                        {step !== "select-repo" && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0"
-                                onClick={handleBack}
-                            >
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                        )}
-                        <div>
-                            <DialogTitle>{stepTitles[step]}</DialogTitle>
-                            <DialogDescription>
-                                {stepDescriptions[step]}
-                            </DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
-
-                {/* Step indicators */}
-                <div className="flex items-center gap-1">
-                    {(["select-repo", "db-type", "language", "orm"] as WizardStep[]).map(
-                        (s, i) => (
-                            <div
-                                key={s}
-                                className={`h-1 flex-1 rounded-full transition-colors ${i <= ["select-repo", "db-type", "language", "orm"].indexOf(step)
-                                    ? "bg-primary"
-                                    : "bg-muted"
-                                    }`}
-                            />
-                        )
+        <>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                    {trigger || (
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Connect Repository
+                        </Button>
                     )}
-                </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] overflow-hidden">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2">
+                            {step !== "select-repo" && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    onClick={handleBack}
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                            )}
+                            <div>
+                                <DialogTitle>{stepTitles[step]}</DialogTitle>
+                                <DialogDescription>
+                                    {stepDescriptions[step]}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
 
-                {step === "select-repo" && (
-                    <RepoSelectStep
-                        repos={filteredRepos}
-                        loading={loading}
-                        search={search}
-                        onSearch={setSearch}
-                        onSelect={handleSelectRepo}
-                    />
-                )}
+                    {/* Step indicators */}
+                    <div className="flex items-center gap-1">
+                        {(["select-repo", "db-type", "language", "orm"] as WizardStep[]).map(
+                            (s, i) => (
+                                <div
+                                    key={s}
+                                    className={`h-1 flex-1 rounded-full transition-colors ${i <= ["select-repo", "db-type", "language", "orm"].indexOf(step)
+                                        ? "bg-primary"
+                                        : "bg-muted"
+                                        }`}
+                                />
+                            )
+                        )}
+                    </div>
 
-                {step === "db-type" && (
-                    <OptionGrid
-                        options={DB_TYPES.map((t) => ({
-                            id: t.id,
-                            label: t.label,
-                            description: t.description,
-                            icon: <Database className="h-6 w-6" />,
-                            comingSoon: t.comingSoon,
-                        }))}
-                        onSelect={handleSelectDbType}
-                    />
-                )}
+                    {step === "select-repo" && (
+                        <RepoSelectStep
+                            repos={filteredRepos}
+                            loading={loading}
+                            search={search}
+                            onSearch={setSearch}
+                            onSelect={handleSelectRepo}
+                        />
+                    )}
 
-                {step === "language" && (
-                    <OptionGrid
-                        options={(LANGUAGES[dbType] || []).map((l) => ({
-                            id: l.id,
-                            label: l.label,
-                            icon: <Code className="h-6 w-6" />,
-                            comingSoon: l.comingSoon,
-                        }))}
-                        onSelect={handleSelectLanguage}
-                    />
-                )}
+                    {step === "db-type" && (
+                        <OptionGrid
+                            options={DB_TYPES.map((t) => ({
+                                id: t.id,
+                                label: t.label,
+                                description: t.description,
+                                icon: <Database className="h-6 w-6" />,
+                                comingSoon: t.comingSoon,
+                            }))}
+                            onSelect={handleSelectDbType}
+                        />
+                    )}
 
-                {step === "orm" && (
-                    <OptionGrid
-                        options={(ORM_OPTIONS[dbType]?.[backendLanguage] || []).map((o) => ({
-                            id: o.id,
-                            label: o.label,
-                            icon: <Layers className="h-6 w-6" />,
-                            comingSoon: o.comingSoon,
-                        }))}
-                        onSelect={handleSelectOrm}
-                        loading={connecting}
-                    />
-                )}
-            </DialogContent>
-        </Dialog>
+                    {step === "language" && (
+                        <OptionGrid
+                            options={(LANGUAGES[dbType] || []).map((l) => ({
+                                id: l.id,
+                                label: l.label,
+                                icon: <Code className="h-6 w-6" />,
+                                comingSoon: l.comingSoon,
+                            }))}
+                            onSelect={handleSelectLanguage}
+                        />
+                    )}
+
+                    {step === "orm" && (
+                        <OptionGrid
+                            options={(ORM_OPTIONS[dbType]?.[backendLanguage] || []).map((o) => ({
+                                id: o.id,
+                                label: o.label,
+                                icon: <Layers className="h-6 w-6" />,
+                                comingSoon: o.comingSoon,
+                            }))}
+                            onSelect={handleSelectOrm}
+                            loading={connecting}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+            <UpgradePlanDialog
+                open={showUpgrade}
+                onOpenChange={setShowUpgrade}
+                currentPlan={user?.subscriptionPlan || 'free'}
+                triggerReason="You've reached your repository limit. Upgrade to connect more repositories."
+            />
+        </>
     )
 }
 
@@ -471,8 +501,8 @@ function OptionGrid({
                     onClick={() => !opt.comingSoon && onSelect(opt.id)}
                     disabled={loading || opt.comingSoon}
                     className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${opt.comingSoon
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-accent/50 hover:border-primary/50"
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-accent/50 hover:border-primary/50"
                         } disabled:opacity-50`}
                 >
                     <div className={`shrink-0 ${opt.comingSoon ? "text-muted-foreground" : "text-primary"}`}>

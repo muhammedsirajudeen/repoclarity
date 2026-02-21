@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import apiClient from "@/lib/api/client"
 import { ConnectRepoDialog } from "@/components/repos/ConnectRepoDialog"
+import { SubscriptionSuccessDialog } from "@/components/layout/SubscriptionSuccessDialog"
 
 interface ConnectedRepo {
     _id: string
@@ -84,6 +85,11 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
+            {/* Subscription success modal */}
+            <Suspense fallback={null}>
+                <SubscriptionSuccessDialog />
+            </Suspense>
+
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>

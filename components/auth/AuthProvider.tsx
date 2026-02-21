@@ -17,6 +17,8 @@ interface User {
     name: string
     email: string
     avatarUrl: string
+    subscriptionPlan: 'free' | 'pro' | 'business'
+    subscriptionStatus: 'active' | 'cancelled' | 'expired' | 'none'
     createdAt: string
 }
 

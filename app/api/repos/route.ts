@@ -4,6 +4,7 @@ import User from '@/lib/models/User';
 import Repository from '@/lib/models/Repository';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { getTokensFromCookies } from '@/lib/auth/cookies';
+import { getPlanLimits } from '@/lib/utils/subscriptionPlans';
 
 async function getAuthenticatedUser() {
     const { accessToken } = await getTokensFromCookies();
@@ -77,6 +78,37 @@ export async function POST(request: NextRequest) {
         }
 
         await dbConnect();
+
+        // Check subscription repo limit
+        const plan = user.subscriptionPlan || 'free';
+        const limits = getPlanLimits(plan);
+
+        if (limits.repoLimit !== -1) {
+            const existing = await Repository.findOne({
+                userId: user._id,
+                githubRepoId,
+            });
+
+            // Only enforce limit for NEW repos, not re-connections
+            if (!existing) {
+                const repoCount = await Repository.countDocuments({
+                    userId: user._id,
+                });
+
+                if (repoCount >= limits.repoLimit) {
+                    return NextResponse.json(
+                        {
+                            error: 'REPO_LIMIT_REACHED',
+                            message: `Your ${plan} plan allows up to ${limits.repoLimit} repository. Upgrade your plan to connect more.`,
+                            limit: limits.repoLimit,
+                            current: repoCount,
+                            plan,
+                        },
+                        { status: 403 }
+                    );
+                }
+            }
+        }
 
         const repo = await Repository.findOneAndUpdate(
             { userId: user._id, githubRepoId },
