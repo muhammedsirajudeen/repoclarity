@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import Subscription from '@/lib/models/Subscription';
 import User from '@/lib/models/User';
-import type { SubscriptionPlan } from '@/lib/models/User';
+import type { SubscriptionEvent } from '@/lib/models/Subscription';
+import type { PlanId } from '@/lib/utils/subscriptionPlans';
 
 /**
  * POST /api/subscriptions/webhook
  * Handles Dodo Payments webhook events for subscription lifecycle.
+ * Each event creates a new Subscription record for history.
  */
 export async function POST(request: NextRequest) {
     try {
@@ -16,31 +19,71 @@ export async function POST(request: NextRequest) {
 
         await dbConnect();
 
-        // Extract relevant data from the webhook payload
         const data = body.data || body;
         const metadata = data.metadata || {};
         const userId = metadata.userId;
-        const subscriptionId = data.subscription_id || data.id;
+        const dodoSubscriptionId = data.subscription_id || data.id;
 
-        if (!userId) {
-            // Try to find user by subscription ID if no userId in metadata
-            if (subscriptionId) {
-                const user = await User.findOne({ subscriptionId });
-                if (user) {
-                    return await handleEvent(eventType, user, data);
-                }
+        let resolvedUserId = userId;
+
+        // If no userId in metadata, find by subscription ID
+        if (!resolvedUserId && dodoSubscriptionId) {
+            const existingSub = await Subscription.findOne({
+                dodoSubscriptionId,
+            })
+                .sort({ createdAt: -1 })
+                .lean();
+
+            if (existingSub) {
+                resolvedUserId = existingSub.userId.toString();
             }
-            console.warn('Webhook: no userId found in metadata');
+        }
+
+        if (!resolvedUserId) {
+            console.warn('Webhook: no userId found');
             return NextResponse.json({ received: true });
         }
 
-        const user = await User.findById(userId);
+        // Verify user exists
+        const user = await User.findById(resolvedUserId);
         if (!user) {
-            console.warn('Webhook: user not found:', userId);
+            console.warn('Webhook: user not found:', resolvedUserId);
             return NextResponse.json({ received: true });
         }
 
-        return await handleEvent(eventType, user, data);
+        const plan = (metadata.plan as PlanId) || 'pro';
+
+        // Map Dodo event types to our status
+        const statusMap: Record<string, SubscriptionEvent> = {
+            'subscription.active': 'active',
+            'subscription.created': 'created',
+            'subscription.renewed': 'renewed',
+            'subscription.cancelled': 'cancelled',
+            'subscription.expired': 'expired',
+            'subscription.failed': 'failed',
+        };
+
+        const status = statusMap[eventType];
+        if (!status) {
+            console.log('Unhandled webhook event:', eventType);
+            return NextResponse.json({ received: true });
+        }
+
+        // Create a new Subscription record for history
+        await Subscription.create({
+            userId: resolvedUserId,
+            dodoSubscriptionId: dodoSubscriptionId || '',
+            plan,
+            status,
+            productId: (data.product_id as string) || '',
+            metadata: data,
+        });
+
+        console.log(
+            `Subscription event recorded: ${status} for user ${resolvedUserId}`
+        );
+
+        return NextResponse.json({ received: true });
     } catch (err) {
         console.error('Webhook error:', err);
         return NextResponse.json(
@@ -48,46 +91,4 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
-
-async function handleEvent(
-    eventType: string,
-    user: InstanceType<typeof User>,
-    data: Record<string, unknown>
-) {
-    const metadata = (data.metadata || {}) as Record<string, string>;
-    const plan = (metadata.plan as SubscriptionPlan) || 'pro';
-    const subscriptionId = (data.subscription_id || data.id) as string;
-
-    switch (eventType) {
-        case 'subscription.active':
-        case 'subscription.created':
-        case 'subscription.renewed': {
-            user.subscriptionPlan = plan;
-            user.subscriptionStatus = 'active';
-            user.subscriptionId = subscriptionId || '';
-            await user.save();
-            break;
-        }
-
-        case 'subscription.cancelled': {
-            user.subscriptionStatus = 'cancelled';
-            await user.save();
-            break;
-        }
-
-        case 'subscription.expired':
-        case 'subscription.failed': {
-            user.subscriptionPlan = 'free';
-            user.subscriptionStatus = 'expired';
-            user.subscriptionId = '';
-            await user.save();
-            break;
-        }
-
-        default:
-            console.log('Unhandled webhook event:', eventType);
-    }
-
-    return NextResponse.json({ received: true });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 import Repository from '@/lib/models/Repository';
+import Subscription from '@/lib/models/Subscription';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { getTokensFromCookies } from '@/lib/auth/cookies';
 import { getPlanLimits } from '@/lib/utils/subscriptionPlans';
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
         await dbConnect();
 
         // Check subscription repo limit
-        const plan = user.subscriptionPlan || 'free';
+        const plan = await Subscription.getActivePlan(user._id);
         const limits = getPlanLimits(plan);
 
         if (limits.repoLimit !== -1) {

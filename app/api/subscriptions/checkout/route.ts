@@ -3,7 +3,7 @@ import { getAuthenticatedUser } from '@/lib/auth/getUser';
 import envConfig from '@/lib/utils/env.config';
 import type { PlanId } from '@/lib/utils/subscriptionPlans';
 import dbConnect from '@/lib/db';
-import User from '@/lib/models/User';
+import Subscription from '@/lib/models/Subscription';
 
 /**
  * POST /api/subscriptions/checkout
@@ -93,16 +93,19 @@ export async function POST(request: NextRequest) {
         const data = await response.json();
         console.log('Dodo Payments response:', JSON.stringify(data, null, 2));
 
-        // Immediately update user's plan in DB so it's ready when they return
+        // Create a Subscription record immediately
         try {
             await dbConnect();
-            await User.findByIdAndUpdate(user._id, {
-                subscriptionPlan: plan,
-                subscriptionStatus: 'active',
-                subscriptionId: data.subscription_id || '',
+            await Subscription.create({
+                userId: user._id,
+                dodoSubscriptionId: data.subscription_id || '',
+                plan,
+                status: 'active',
+                productId: productId || '',
+                metadata: { source: 'checkout' },
             });
         } catch (dbErr) {
-            console.error('Failed to update user plan:', dbErr);
+            console.error('Failed to create subscription record:', dbErr);
         }
 
         return NextResponse.json({

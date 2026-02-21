@@ -6,6 +6,7 @@ import DiagramUsage from '@/lib/models/DiagramUsage';
 import { getAuthenticatedUser } from '@/lib/auth/getUser';
 import { parseMongooseSchemas, isModelFile, hasSchemaContent } from '@/lib/utils/schemaParser';
 import { getPlanLimits } from '@/lib/utils/subscriptionPlans';
+import Subscription from '@/lib/models/Subscription';
 
 interface GitHubTreeItem {
     path: string;
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check daily diagram generation limit
-        const plan = user.subscriptionPlan || 'free';
+        const plan = await Subscription.getActivePlan(user._id);
         const limits = getPlanLimits(plan);
         const today = new Date().toISOString().split('T')[0];
 

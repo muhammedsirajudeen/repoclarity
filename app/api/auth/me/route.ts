@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
+import Subscription from '@/lib/models/Subscription';
 import { verifyAccessToken } from '@/lib/auth/jwt';
 import { getTokensFromCookies } from '@/lib/auth/cookies';
 
@@ -27,6 +28,9 @@ export async function GET() {
             return NextResponse.json({ error: 'User not found' }, { status: 401 });
         }
 
+        const activePlan = await Subscription.getActivePlan(user._id);
+        const activeSub = await Subscription.getActiveSubscription(user._id);
+
         return NextResponse.json({
             user: {
                 id: user._id,
@@ -35,8 +39,8 @@ export async function GET() {
                 name: user.name,
                 email: user.email,
                 avatarUrl: user.avatarUrl,
-                subscriptionPlan: user.subscriptionPlan || 'free',
-                subscriptionStatus: user.subscriptionStatus || 'none',
+                subscriptionPlan: activePlan,
+                subscriptionStatus: activeSub ? 'active' : 'none',
                 createdAt: user.createdAt,
             },
         });
@@ -47,3 +51,4 @@ export async function GET() {
         );
     }
 }
+

@@ -4,6 +4,7 @@ import { getPlanLimits } from '@/lib/utils/subscriptionPlans';
 import dbConnect from '@/lib/db';
 import Repository from '@/lib/models/Repository';
 import DiagramUsage from '@/lib/models/DiagramUsage';
+import Subscription from '@/lib/models/Subscription';
 
 /**
  * GET /api/subscriptions/status
@@ -21,7 +22,8 @@ export async function GET() {
 
         await dbConnect();
 
-        const plan = user.subscriptionPlan || 'free';
+        const plan = await Subscription.getActivePlan(user._id);
+        const activeSub = await Subscription.getActiveSubscription(user._id);
         const limits = getPlanLimits(plan);
 
         // Count connected repos
@@ -38,8 +40,8 @@ export async function GET() {
 
         return NextResponse.json({
             plan,
-            status: user.subscriptionStatus || 'none',
-            subscriptionId: user.subscriptionId || '',
+            status: activeSub ? 'active' : 'none',
+            subscriptionId: activeSub?.dodoSubscriptionId || '',
             limits: {
                 repoLimit: limits.repoLimit,
                 diagramsPerDay: limits.diagramsPerDay,
@@ -57,3 +59,4 @@ export async function GET() {
         );
     }
 }
+

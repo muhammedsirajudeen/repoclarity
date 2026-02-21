@@ -11,10 +11,6 @@ export interface IUser extends Document {
     avatarUrl: string;
     githubAccessToken: string;
     refreshToken: string;
-    subscriptionPlan: SubscriptionPlan;
-    subscriptionId: string;
-    subscriptionStatus: SubscriptionStatus;
-    subscriptionExpiresAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -51,24 +47,6 @@ const UserSchema = new Schema<IUser>(
             type: String,
             default: '',
         },
-        subscriptionPlan: {
-            type: String,
-            enum: ['free', 'pro', 'business'],
-            default: 'free',
-        },
-        subscriptionId: {
-            type: String,
-            default: '',
-        },
-        subscriptionStatus: {
-            type: String,
-            enum: ['active', 'cancelled', 'expired', 'none'],
-            default: 'none',
-        },
-        subscriptionExpiresAt: {
-            type: Date,
-            default: null,
-        },
     },
     {
         timestamps: true,
@@ -79,3 +57,4 @@ const User: Model<IUser> =
     mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
 export default User;
+
