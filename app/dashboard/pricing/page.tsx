@@ -10,9 +10,18 @@ import {
     Sparkles,
     Rocket,
     ArrowRight,
+    AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import apiClient from "@/lib/api/client"
 import { PLANS, type PlanId } from "@/lib/utils/subscriptionPlans"
 
@@ -43,9 +52,13 @@ const planMeta: Record<PlanId, {
 }
 
 export default function PricingPage() {
-    const { user } = useAuth()
+    const { user, refreshUser } = useAuth()
     const [loading, setLoading] = useState<PlanId | null>(null)
+    const [isCanceling, setIsCanceling] = useState(false)
+    const [showCancelDialog, setShowCancelDialog] = useState(false)
+
     const currentPlan = user?.subscriptionPlan || "free"
+    const isCancelledStatus = user?.subscriptionStatus === "cancelled"
 
     const handleUpgrade = async (plan: PlanId) => {
         if (plan === "free" || plan === currentPlan) return
@@ -60,6 +73,19 @@ export default function PricingPage() {
             console.error("Failed to create checkout:", err)
         } finally {
             setLoading(null)
+        }
+    }
+
+    const handleCancel = async () => {
+        setIsCanceling(true)
+        try {
+            await apiClient.post("/subscriptions/cancel")
+            await refreshUser() // Refresh user data to get updated subscription status
+            setShowCancelDialog(false)
+        } catch (err) {
+            console.error("Failed to cancel subscription:", err)
+        } finally {
+            setIsCanceling(false)
         }
     }
 
@@ -154,13 +180,25 @@ export default function PricingPage() {
 
                             {/* CTA */}
                             {isCurrent ? (
-                                <Button
-                                    variant="outline"
-                                    disabled
-                                    className="w-full"
-                                >
-                                    Current Plan
-                                </Button>
+                                <div className="space-y-2">
+                                    <Button
+                                        variant="outline"
+                                        disabled
+                                        className="w-full"
+                                    >
+                                        Current Plan {isCancelledStatus && "(Cancels securely at End of Billing Period)"}
+                                    </Button>
+                                    {planId !== "free" && !isCancelledStatus && (
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() => setShowCancelDialog(true)}
+                                            disabled={isCanceling}
+                                        >
+                                            Cancel Subscription
+                                        </Button>
+                                    )}
+                                </div>
                             ) : planId === "free" ? (
                                 <Button
                                     variant="ghost"
@@ -198,6 +236,38 @@ export default function PricingPage() {
                     )
                 })}
             </div>
+
+            {/* Cancel Subscription Dialog */}
+            <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5" />
+                            Cancel Subscription
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your current billing cycle.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowCancelDialog(false)}
+                            disabled={isCanceling}
+                        >
+                            Keep Subscription
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleCancel}
+                            disabled={isCanceling}
+                        >
+                            {isCanceling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Confirm Cancellation
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* FAQ / Footer Note */}
             <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">

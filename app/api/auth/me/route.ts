@@ -40,7 +40,7 @@ export async function GET() {
                 email: user.email,
                 avatarUrl: user.avatarUrl,
                 subscriptionPlan: activePlan,
-                subscriptionStatus: activeSub ? 'active' : 'none',
+                subscriptionStatus: activeSub ? activeSub.status : 'none',
                 createdAt: user.createdAt,
             },
         });

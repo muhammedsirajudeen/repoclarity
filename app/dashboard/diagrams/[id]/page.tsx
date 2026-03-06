@@ -17,6 +17,14 @@ import {
 import apiClient from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { DiagramRenderer } from "@/components/diagrams/DiagramRenderer"
 
 interface FieldDef {
@@ -62,6 +70,7 @@ export default function DiagramViewPage() {
     const [loading, setLoading] = useState(true)
     const [deleting, setDeleting] = useState(false)
     const [regenerating, setRegenerating] = useState(false)
+    const [regenerateError, setRegenerateError] = useState<string | null>(null)
 
     const fetchDiagram = useCallback(async () => {
         try {
@@ -92,6 +101,7 @@ export default function DiagramViewPage() {
     const handleRegenerate = async () => {
         if (!diagram) return
         setRegenerating(true)
+        setRegenerateError(null)
         try {
             const res = await apiClient.post("/diagrams/generate", {
                 repoId: diagram.repositoryId._id,
@@ -99,8 +109,14 @@ export default function DiagramViewPage() {
             if (res.data.diagram) {
                 setDiagram(res.data.diagram)
             }
-        } catch {
-            // silently fail
+        } catch (error: any) {
+            if (error.response?.data?.error === 'DIAGRAM_LIMIT_REACHED') {
+                setRegenerateError(error.response.data.message)
+            } else if (error.response?.data?.message) {
+                setRegenerateError(error.response.data.message)
+            } else {
+                setRegenerateError("Failed to regenerate diagram.")
+            }
         } finally {
             setRegenerating(false)
         }
@@ -142,6 +158,30 @@ export default function DiagramViewPage() {
 
     return (
         <div className="space-y-4">
+            <Dialog open={!!regenerateError} onOpenChange={(open) => !open && setRegenerateError(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertCircle className="h-5 w-5" />
+                            Regeneration Failed
+                        </DialogTitle>
+                        <DialogDescription className="pt-2 text-base">
+                            {regenerateError}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {regenerateError?.includes("Upgrade") && (
+                        <DialogFooter className="mt-4">
+                            <Button variant="outline" onClick={() => setRegenerateError(null)}>
+                                Cancel
+                            </Button>
+                            <Link href="/dashboard/pricing">
+                                <Button>Upgrade Plan</Button>
+                            </Link>
+                        </DialogFooter>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
