@@ -4,7 +4,6 @@ import User from '@/lib/models/User';
 import {
     verifyRefreshToken,
     signAccessToken,
-    signRefreshToken,
 } from '@/lib/auth/jwt';
 import { getTokensFromCookies, setAuthCookies } from '@/lib/auth/cookies';
 
@@ -39,14 +38,11 @@ export async function POST() {
             );
         }
 
-        // Rotate tokens
+        // Generate a new access token (Keep the existing refresh token to avoid race conditions)
         const newAccessToken = signAccessToken(user._id.toString());
-        const newRefreshToken = signRefreshToken(user._id.toString());
-
-        await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
 
         const response = NextResponse.json({ success: true });
-        setAuthCookies(response, newAccessToken, newRefreshToken);
+        setAuthCookies(response, newAccessToken, refreshToken);
 
         return response;
     } catch {

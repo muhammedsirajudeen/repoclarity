@@ -17,24 +17,37 @@ export async function middleware(request: NextRequest) {
     }
 
     const accessToken = request.cookies.get('access_token')?.value;
+    const refreshToken = request.cookies.get('refresh_token')?.value;
 
-    if (!accessToken) {
+    let isAuthValid = false;
+
+    if (accessToken) {
+        try {
+            const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+            await jwtVerify(accessToken, secret);
+            isAuthValid = true;
+        } catch {
+            // Access token invalid or expired
+        }
+    }
+
+    if (!isAuthValid && refreshToken) {
+        try {
+            const refreshSecret = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!);
+            await jwtVerify(refreshToken, refreshSecret);
+            isAuthValid = true;
+        } catch {
+            // Refresh token invalid or expired
+        }
+    }
+
+    if (!isAuthValid) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
     }
 
-    try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-        await jwtVerify(accessToken, secret);
-        return NextResponse.next();
-    } catch {
-        // Token expired or invalid — try to let the client-side refresh handle it
-        // But if it's a page navigation, redirect to login
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
-    }
+    return NextResponse.next();
 }
 
 export const config = {
